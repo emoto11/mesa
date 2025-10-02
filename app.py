@@ -72,50 +72,49 @@ max_stores = model_params["N_stores"]["max"]
 
 store_colors = plt.get_cmap("hsv", max_stores)
 
+
 def hotelling_draw(agent):
-    """CanvasGrid/Space 用: 1エージェントの描き方を dict で返す"""
+    """Grid(マス目)用の描画フォーマット。
+    Store=四角(価格で透明度) / Consumer=青丸
+    """
     if agent is None:
         return
 
-    # 座標は CellAgent.cell.coordinate に必ず入っている
-    if hasattr(agent, "cell") and getattr(agent.cell, "coordinate", None) is not None:
-        coord = agent.cell.coordinate
-    else:
+    # 座標は CellAgent の cell.coordinate に入っている実装
+    coord = getattr(getattr(agent, "cell", None), "coordinate", None)
+    if coord is None:
         return
-
     x, y = coord[0], coord[1]  # CanvasGrid は x=col, y=row
 
-    # 店舗 = オレンジの四角（価格で濃淡 / 移動可否で枠色）
+    # ---- Store: オレンジの四角（価格で透明度を変える）----
+    # ※ class 名が StoreAgent でない場合は isinstance の型を合わせてください
+    from hotelling_law.agents import StoreAgent, ConsumerAgent  # 安全のため関数内でも参照
     if isinstance(agent, StoreAgent):
         price = float(getattr(agent, "price", 10.0))
-        can_move = bool(getattr(agent, "can_move", False))
-
-        # 価格(5〜15想定) → 透明度(0.4〜1.0) にマップ
+        # 価格(5〜15想定) → 透明度(0.4〜1.0) に線形マップ
         p_min, p_max = 5.0, 15.0
         alpha = max(0.4, min(1.0, (price - p_min) / (p_max - p_min + 1e-9)))
 
         return {
             "Shape": "rect",
             "x": x, "y": y,
-            "w": 0.9, "h": 0.9,
-            "color": f"rgba(255,165,0,{alpha})",
-            "Filled": "true",
-            "stroke": "#1976d2" if can_move else "#444444",
-            "stroke_width": 2,
+            "w": 0.90, "h": 0.90,        # セル内サイズ
+            "color": "#FFA500",          # オレンジ（HEX）
+            "alpha": float(alpha),       # 透明度は別キーで渡す
             "Layer": 3,
         }
 
-    # 消費者 = 青い小さな丸
+    # ---- Consumer: 青い小さな丸 ----
     if isinstance(agent, ConsumerAgent):
         return {
             "Shape": "circle",
             "x": x, "y": y,
             "r": 0.25,
-            "color": "#2196f3",
-            "Filled": "true",
+            "color": "#2196f3",          # 青（Google Blue系）
             "Layer": 2,
         }
 
+    # その他タイプは描かない
     return
 
 
