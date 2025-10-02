@@ -94,17 +94,16 @@ def hotelling_draw(agent):
 
         # 価格(5〜15想定) → 透明度(0.25〜1.0) にマップ
         p_min, p_max = 5.0, 15.0
-        alpha = max(0.25, min(1.0, (price - p_min) / (p_max - p_min + 1e-9)))
+        alpha = max(0.4, min(1.0, (price - p_min) / (p_max - p_min + 1e-9)))
 
         return {
             "Shape": "rect",
             "x": x, "y": y,
-            "w": 0.85, "h": 0.85,                 # セル内サイズ
+            "w": 0.95, "h": 0.95,                 # セル内サイズ
             "Color": f"rgba(255,165,0,{alpha})",  # 濃い=高価格
             "Filled": "true",
-            "StrokeColor": "#1976d2" if can_move else "#777777",  # 可動=青 / 固定=灰
-            "StrokeWidth": 2,
-            "Layer": 2,
+            "stroke": "#1976d2" if can_move else "#444444",  # ← 小文字 stroke
+            "Layer": 3,
         }
 
     # 消費者 = 青い小さな丸
@@ -112,10 +111,10 @@ def hotelling_draw(agent):
         return {
             "Shape": "circle",
             "x": x, "y": y,
-            "r": 0.28,
-            "Color": "#2196f3",
+            "r": 0.25,
+            "color": "#2196f3",    # ← 小文字 color
             "Filled": "true",
-            "Layer": 1,
+            "Layer": 2,
         }
 
     # その他は描かない
