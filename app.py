@@ -72,6 +72,55 @@ max_stores = model_params["N_stores"]["max"]
 
 store_colors = plt.get_cmap("hsv", max_stores)
 
+# === Grid用 描画フォーマット（agent_portrayal 相当） ===
+def hotelling_draw(agent):
+    """CanvasGrid/Space 用: 1エージェントの描き方を dict で返す"""
+    if agent is None:
+        return
+
+    # 位置（CellAgent は agent.cell.coordinate に入っている）
+    coord = getattr(getattr(agent, "cell", None), "coordinate", None)
+    if coord is None:
+        # 念のため agent.pos にも対応
+        coord = getattr(agent, "pos", None)
+    if coord is None:
+        return
+    x, y = coord[0], coord[1]  # CanvasGridは x=col, y=row
+
+    # 店舗 = オレンジの四角（価格で濃淡 / 移動可否で枠色）
+    if isinstance(agent, StoreAgent):
+        price = float(getattr(agent, "price", 10.0))
+        can_move = bool(getattr(agent, "can_move", False))
+
+        # 価格(5〜15想定) → 透明度(0.25〜1.0) にマップ
+        p_min, p_max = 5.0, 15.0
+        alpha = max(0.25, min(1.0, (price - p_min) / (p_max - p_min + 1e-9)))
+
+        return {
+            "Shape": "rect",
+            "x": x, "y": y,
+            "w": 0.85, "h": 0.85,                 # セル内サイズ
+            "Color": f"rgba(255,165,0,{alpha})",  # 濃い=高価格
+            "Filled": "true",
+            "StrokeColor": "#1976d2" if can_move else "#777777",  # 可動=青 / 固定=灰
+            "StrokeWidth": 2,
+            "Layer": 2,
+        }
+
+    # 消費者 = 青い小さな丸
+    if isinstance(agent, ConsumerAgent):
+        return {
+            "Shape": "circle",
+            "x": x, "y": y,
+            "r": 0.28,
+            "Color": "#2196f3",
+            "Filled": "true",
+            "Layer": 1,
+        }
+
+    # その他は描かない
+    return
+
 
 # This function defines how agents are visually represented in the simulation.
 def agent_portrayal(agent):
@@ -349,10 +398,17 @@ model1 = HotellingModel(20, 20)
 # page = SolaraViz(
 #     model1,
 
+# === Gridキャンバスを作る（ColorPatchesと同じ要領） ===
+space_component = make_space_component(
+    hotelling_draw,   # ← ②で定義した描画フォーマット
+    draw_grid=True,   # マス目の線を表示（先生の見せ方に近づく）
+)
+
 # Create Solara viz from model *class* + parameter UI spec
 page = SolaraViz(
     model1,
     components=[
+        space_component, # 左上にマス目アニメ追加
         SpaceDrawer,
         make_price_changes_line_chart,
         make_market_share_and_price_chart,
