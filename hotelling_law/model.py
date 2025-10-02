@@ -71,7 +71,7 @@ class HotellingModel(Model):
         width=50,
         height=50,
         mode="default",
-        consumer_preferences="moving_only",
+        consumer_preferences="default",
         environment_type="grid",
         mobility_rate=80,
         seed=None,
