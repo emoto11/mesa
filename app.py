@@ -72,37 +72,36 @@ max_stores = model_params["N_stores"]["max"]
 
 store_colors = plt.get_cmap("hsv", max_stores)
 
-# === Grid用 描画フォーマット（agent_portrayal 相当） ===
 def hotelling_draw(agent):
     """CanvasGrid/Space 用: 1エージェントの描き方を dict で返す"""
     if agent is None:
         return
 
-    # 位置（CellAgent は agent.cell.coordinate に入っている）
-    coord = getattr(getattr(agent, "cell", None), "coordinate", None)
-    if coord is None:
-        # 念のため agent.pos にも対応
-        coord = getattr(agent, "pos", None)
-    if coord is None:
+    # 座標は CellAgent.cell.coordinate に必ず入っている
+    if hasattr(agent, "cell") and getattr(agent.cell, "coordinate", None) is not None:
+        coord = agent.cell.coordinate
+    else:
         return
-    x, y = coord[0], coord[1]  # CanvasGridは x=col, y=row
+
+    x, y = coord[0], coord[1]  # CanvasGrid は x=col, y=row
 
     # 店舗 = オレンジの四角（価格で濃淡 / 移動可否で枠色）
     if isinstance(agent, StoreAgent):
         price = float(getattr(agent, "price", 10.0))
         can_move = bool(getattr(agent, "can_move", False))
 
-        # 価格(5〜15想定) → 透明度(0.25〜1.0) にマップ
+        # 価格(5〜15想定) → 透明度(0.4〜1.0) にマップ
         p_min, p_max = 5.0, 15.0
         alpha = max(0.4, min(1.0, (price - p_min) / (p_max - p_min + 1e-9)))
 
         return {
             "Shape": "rect",
             "x": x, "y": y,
-            "w": 0.95, "h": 0.95,                 # セル内サイズ
-            "Color": f"rgba(255,165,0,{alpha})",  # 濃い=高価格
+            "w": 0.9, "h": 0.9,
+            "color": f"rgba(255,165,0,{alpha})",
             "Filled": "true",
-            "stroke": "#1976d2" if can_move else "#444444",  # ← 小文字 stroke
+            "stroke": "#1976d2" if can_move else "#444444",
+            "stroke_width": 2,
             "Layer": 3,
         }
 
@@ -112,13 +111,13 @@ def hotelling_draw(agent):
             "Shape": "circle",
             "x": x, "y": y,
             "r": 0.25,
-            "color": "#2196f3",    # ← 小文字 color
+            "color": "#2196f3",
             "Filled": "true",
             "Layer": 2,
         }
 
-    # その他は描かない
     return
+
 
 
 # This function defines how agents are visually represented in the simulation.
